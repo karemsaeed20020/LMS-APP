@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler.js");
 const userModel = require("../models/userModel.js");
 const AppError = require("../utils/AppError.js");
 const generateToken = require("../config/jwtToken.js");
+const { validateMongodbId } = require("../config/validateMongoDbId.js");
 
 const registerAUser = asyncHandler(async(req, res,next) => {
     const {email} = req.body;
@@ -42,8 +43,71 @@ const getAllUsers = asyncHandler(async(req, res, next) => {
         allUser
     })
 })
+
+// Update User Profile
+const updateUser = asyncHandler(async(req, res, next) => {
+    const {_id} = req.user;
+    validateMongodbId(_id);
+    const user = await userModel.findByIdAndUpdate(_id, req.body, {new: true});
+    res.status(200).json({
+        status: "Success",
+        message: "Profile Updating Successfully",
+        user
+    })
+})
+
+// delete a user
+const deleteUser = asyncHandler((async(req, res, next) => {
+    const {id} = req.params;
+    validateMongodbId(id);
+    await userModel.findByIdAndDelete(id);
+    res.status(200).json({
+        status: "Success",
+        message: "User Deleted Successfully"
+    })
+}))
+
+// get a user
+const getAUser = asyncHandler(async(req, res, next) => {
+    const {id} = req.params;
+    validateMongodbId(id);
+    const getProfile = await userModel.findById(id);
+    res.status(200).json({
+        status: "Success",
+        message: "User Found",
+        getProfile
+    })
+
+})
+
+const blockUser = asyncHandler(async(req, res, next) => {
+    const {id} = req.params;
+    validateMongodbId(id);
+    const block = await userModel.findByIdAndUpdate(id, {isBlocked: true}, {new: true});
+    res.status(200).json({
+        status: "Success",
+        message: "User Blocked Successfully",
+        block
+    })
+})
+const unblockUser = asyncHandler(async(req, res, next) => {
+    const {id} = req.params;
+    validateMongodbId(id);
+    const unblock = await userModel.findByIdAndUpdate(id, {isBlocked: false}, {new: true});
+    res.status(200).json({
+        status: "Success",
+        message: "User unBlocked Successfully",
+        unblock
+    })
+})
+
 module.exports = {
     registerAUser,
     loginAUser,
-    getAllUsers
+    getAllUsers,
+    getAUser,
+    updateUser,
+    deleteUser,
+    blockUser,
+    unblockUser
 }
