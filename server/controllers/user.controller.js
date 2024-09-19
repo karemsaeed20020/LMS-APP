@@ -3,7 +3,8 @@ const userModel = require("../models/userModel.js");
 const AppError = require("../utils/AppError.js");
 const generateToken = require("../config/jwtToken.js");
 const { validateMongodbId } = require("../config/validateMongoDbId.js");
-
+const crypto = require("crypto");
+const sendEmail = require("../utils/email.js");
 const registerAUser = asyncHandler(async(req, res,next) => {
     const {email} = req.body;
     const findUser = await userModel.findOne({email: email});
@@ -118,6 +119,57 @@ const updatePassword = asyncHandler(async(req, res, next) => {
     }
 
 })
+// Forgot Password Token
+const forgotPasswordToken = asyncHandler(async(req, res, next) => {
+    const {email} = req.body;
+    const user = await userModel.findOne({email: email});
+    if (!user) {
+        return next(new AppError("User not Exists with this email"));
+    }
+    try {
+        const token = await user.createPasswordResetToken();
+        await user.save();
+        const resetLink = `http://localhost:4000/api/user/reset-password/${token}`;
+        
+        const message = `Forgot Your Password? Submit a patch request with your new password and passwordConfirm to: ${resetLink}.\nIf you didn't forget your password, please ignore this email`;
+
+        await sendEmail({
+            email: user.email,
+            subject: "Your password reset token (valid for 10 min)",
+            message
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: "Token sent to email",
+            resetLink // Include reset link in the response if needed
+        });
+    } catch (err) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        return next(new AppError("There was an error sending the email, Try again later", 500));   
+    }
+});
+const resetToken = asyncHandler(async(req, res, next) => {
+    const {password} = req.body;
+    const {token} = req.params;
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const user = await userModel.findOne({
+        passwordResetToken:hashedToken,
+        passwordResetExpires: {$gt: Date.now()}
+    });
+    if (!user) {
+        return next(new AppError("Token Expired, Please Try Again"))
+    }
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+    res.status(200).json({
+        status: "Success",
+        message: "Password Reset Successfully", 
+    })
+})
 
 module.exports = {
     registerAUser,
@@ -128,5 +180,7 @@ module.exports = {
     deleteUser,
     blockUser,
     unblockUser,
-    updatePassword
+    updatePassword,
+    forgotPasswordToken,
+    resetToken
 }
