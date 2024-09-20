@@ -13,6 +13,7 @@ dotenv.config();
 const PORT = process.env.PORT || 5000;
 const passportSetup = require('./utils/passport.js');
 const tutCategoryRouter = require("./routes/tutCategory.routes.js");
+const tutorialRouter = require("./routes/tutorial.routes.js");
 dbConnect();
 app.use(session({
     secret: "mysecret",
@@ -30,6 +31,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use('/api/users', userRouter);
 app.use('/api/tutorial/category', tutCategoryRouter);
+app.use('/api/tutorial', tutorialRouter);
 app.use("/", googleRouter);
 app.get('/', (req, res) => {
     res.send(`<a href="http://localhost:4000/google">Login with google</a>`)
