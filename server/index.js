@@ -17,6 +17,7 @@ const tutorialRouter = require("./routes/tutorial.routes.js");
 const newsLetterRouter = require("./routes/newsLetter.routes.js");
 const reviewRouter = require("./routes/review.routes.js");
 const contactRouter = require("./routes/contact.routes.js");
+const videoRouter = require("./routes/video.routes.js");
 dbConnect();
 app.use(session({
     secret: "mysecret",
@@ -38,6 +39,7 @@ app.use('/api/tutorial', tutorialRouter);
 app.use('/api/newsletter', newsLetterRouter);
 app.use('/api/review', reviewRouter);
 app.use('/api/contact', contactRouter);
+app.use('/api/video', videoRouter);
 app.use("/", googleRouter);
 app.get('/', (req, res) => {
     res.send(`<a href="http://localhost:4000/google">Login with google</a>`)
